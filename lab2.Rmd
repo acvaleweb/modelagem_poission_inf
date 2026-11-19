@@ -98,7 +98,7 @@ A melhor foi selecionada pela maior log-verossimilhança.
 ## Exercicio 6
 
 ```{r}
-source("partes/parte3.R")
+source("src/parte3/parte3.R")
 dir.create("figure/parte3", recursive = TRUE, showWarnings = FALSE)
 
 # Salva uma copia em PNG e mostra o mesmo grafico no RStudio/relatorio.
