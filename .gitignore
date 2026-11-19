@@ -12,3 +12,7 @@ output/
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+
+
+# Pacotes temporários de exportação
+relatorio/overleaf/overleaf.zip

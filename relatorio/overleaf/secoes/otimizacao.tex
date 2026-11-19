@@ -1,0 +1,109 @@
+
+\section{Estimação por máxima verossimilhança}
+
+Considere uma amostra independente
+$y_1,\ldots,y_n$ proveniente de uma distribuição
+de Poisson inflada em zero (ZIP), com parâmetros
+$0<p<1$ e $\lambda>0$.
+
+A função de probabilidade é
+
+\begin{equation}
+P(Y=y)=
+\begin{cases}
+p+(1-p)e^{-\lambda}, & y=0,\\
+(1-p)e^{-\lambda}\dfrac{\lambda^y}{y!},
+& y>0.
+\end{cases}
+\end{equation}
+
+Definimos $n_0$ como o número de observações iguais
+a zero, $n_+=n-n_0$ como o número de observações
+positivas e $S=\sum_{i=1}^{n}y_i$.
+
+A log-verossimilhança, omitindo termos constantes
+em relação aos parâmetros, é
+
+\begin{equation}
+\ell(p,\lambda)
+=
+n_0\log\left[p+(1-p)e^{-\lambda}\right]
++n_+\log(1-p)
+-n_+\lambda
++S\log\lambda.
+\end{equation}
+
+\subsection{Questão 1: Equações de score}
+
+Para obter as condições de primeira ordem da
+máxima verossimilhança, calculamos as derivadas
+parciais de $\ell(p,\lambda)$.
+
+Definindo
+
+\begin{equation}
+A(p,\lambda)=p+(1-p)e^{-\lambda},
+\end{equation}
+
+temos
+
+\begin{equation}
+\frac{\partial A}{\partial p}
+=1-e^{-\lambda},
+\qquad
+\frac{\partial A}{\partial\lambda}
+=-(1-p)e^{-\lambda}.
+\end{equation}
+
+Derivando a log-verossimilhança em relação a $p$,
+
+\begin{align}
+\frac{\partial\ell}{\partial p}
+&=
+n_0\frac{1}{A(p,\lambda)}
+\frac{\partial A}{\partial p}
+-\frac{n_+}{1-p}\\
+&=
+\frac{n_0(1-e^{-\lambda})}
+{p+(1-p)e^{-\lambda}}
+-\frac{n_+}{1-p}.
+\end{align}
+
+Analogamente, derivando em relação a $\lambda$,
+
+\begin{align}
+\frac{\partial\ell}{\partial\lambda}
+&=
+n_0\frac{1}{A(p,\lambda)}
+\frac{\partial A}{\partial\lambda}
+-n_++\frac{S}{\lambda}\\
+&=
+-\frac{n_0(1-p)e^{-\lambda}}
+{p+(1-p)e^{-\lambda}}
+-n_++\frac{S}{\lambda}.
+\end{align}
+
+Assim, as equações de score para um ponto
+estacionário interior são
+
+\begin{equation}
+\boxed{
+\frac{n_0(1-e^{-\lambda})}
+{p+(1-p)e^{-\lambda}}
+-\frac{n_+}{1-p}=0
+}
+\end{equation}
+
+e
+
+\begin{equation}
+\boxed{
+-\frac{n_0(1-p)e^{-\lambda}}
+{p+(1-p)e^{-\lambda}}
+-n_++\frac{S}{\lambda}=0.
+}
+\end{equation}
+
+Essas equações caracterizam os pontos estacionários
+interiores da log-verossimilhança e constituem a
+base para a implementação do método de Newton-Raphson.
