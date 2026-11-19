@@ -16,6 +16,7 @@ source("src/modelo_zip.R")
 source("src/optim/optim_zip.R")
 source("src/parte2/em_zip.R")
 source("src/parte2/ajustar_em_por_perfil.R")
+source("src/parte3/parte3.R")
 ```
 
 # 1. Preparação dos dados
@@ -106,6 +107,8 @@ knitr::kable(
 )
 ```
 
+
+
 ```{r convergencia-em}
 ggplot2::ggplot(resultados_em$historico, ggplot2::aes(iteracao, logLik)) +
   ggplot2::geom_line(color = "steelblue") +
@@ -120,7 +123,6 @@ ggplot2::ggplot(resultados_em$historico, ggplot2::aes(iteracao, logLik)) +
 ## Exercicio 6
 
 ```{r}
-source("src/parte3/parte3.R")
 dir.create("figure/parte3", recursive = TRUE, showWarnings = FALSE)
 
 # Salva uma copia em PNG e mostra o mesmo grafico no RStudio/relatorio.
@@ -143,12 +145,15 @@ ajustes <- setNames(lapply(perfis, function(perfil) {
   gibbs_zip(visitas_por_perfil[[perfil]], B = 10000, burnin = 2000, p_inicial = 0.5, lambda_inicial = resumo_dados[[perfil, "media"]])
 }), perfis)
 
-resumos <- do.call(rbind, lapply(perfis, function(perfil) {
+estimativas_gs <- do.call(rbind, lapply(perfis, function(perfil) {
   cbind(perfil = perfil, ajustes[[perfil]]$resumo)
 }))
-rownames(resumos) <- NULL
+
+estimativas_gs
+
+rownames(estimativas_gs) <- NULL
 latex_resumos <- knitr::kable(
-  resumos, format = "latex", booktabs = TRUE, digits = 4,
+  estimativas_gs, format = "latex", booktabs = TRUE, digits = 4,
   col.names = c("Perfil", "Parametro", "Media", "Mediana", "LI 95%", "LS 95%"),
   caption = "Resumos posteriores dos parametros por perfil"
 )
@@ -241,6 +246,69 @@ for (perfil in perfis) {
 
 
 # 6. Comparação dos métodos
+
+Para cada perfil e parâmetro, comparamos a mediana e o intervalo de
+credibilidade de 95% do Gibbs com as estimativas pontuais do EM e do optim.
+O intervalo representa a incerteza posterior; EM e optim não possuem
+intervalos apresentados aqui. A proximidade entre as estimativas é um
+indício de coerência, mas estar dentro do intervalo não é uma prova formal.
+
+```{r comparacao-metodos}
+comparacao_metodos <- do.call(rbind, lapply(seq_len(nrow(estimativas_gs)), function(i) {
+  gs <- estimativas_gs[i, ]
+  perfil <- as.character(gs$perfil)
+  parametro <- as.character(gs$parametro)
+  linha_em <- match(perfil, as.character(estimativas_em$perfil))
+  linha_optim <- match(perfil, rownames(estimativas_optim))
+  if (is.na(linha_em) || is.na(linha_optim)) {
+    stop(paste("Perfil ausente nas estimativas EM ou optim:", perfil))
+  }
+  data.frame(
+    perfil = perfil, parametro = parametro,
+    mediana_gs = gs$mediana, li_gs = gs$LI_95, ls_gs = gs$LS_95,
+    em = estimativas_em[[parametro]][linha_em],
+    optim = estimativas_optim[[parametro]][linha_optim]
+  )
+}))
+rownames(comparacao_metodos) <- NULL
+
+knitr::kable(comparacao_metodos, digits = 4,
+             caption = "Comparação das estimativas por perfil e parâmetro")
+
+dir.create("relatorio/overleaf/assets/tabelas", recursive = TRUE, showWarnings = FALSE)
+latex_comparacao <- knitr::kable(
+  comparacao_metodos, format = "latex", booktabs = TRUE, digits = 4,
+  col.names = c("Perfil", "Parametro", "Mediana Gibbs", "LI 95%", "LS 95%", "EM", "optim"),
+  caption = "Comparacao das estimativas Bayesianas e de maxima verossimilhanca"
+)
+writeLines(as.character(latex_comparacao),
+           "relatorio/overleaf/assets/tabelas/comparacao_metodos.tex")
+
+for (i in seq_len(nrow(comparacao_metodos))) {
+  linha <- comparacao_metodos[i, ]
+  salvar_grafico(
+    file.path("figure/parte3", paste0("comparacao_", linha$perfil, "_", linha$parametro, ".png")),
+    function() {
+      limites <- range(c(linha$li_gs, linha$ls_gs, linha$em, linha$optim))
+      margem <- max(diff(limites) * 0.15, 0.01)
+      plot(NA, xlim = limites + c(-margem, margem), ylim = c(0.5, 3.5),
+           yaxt = "n", xlab = linha$parametro, ylab = "",
+           main = paste("Perfil", linha$perfil, "-", linha$parametro))
+      axis(2, at = 1:3, labels = c("optim", "EM", "Gibbs"), las = 1)
+      segments(linha$li_gs, 3, linha$ls_gs, 3, col = "steelblue", lwd = 3)
+      points(c(linha$optim, linha$em, linha$mediana_gs), 1:3,
+             pch = 19, col = c("darkgreen", "darkorange", "steelblue"), cex = 1.3)
+    }
+  )
+}
+```
+
+Para os dados analisados, as estimativas do EM e do optim são praticamente
+iguais e próximas das medianas posteriores em todos os perfis e parâmetros.
+Além disso, as estimativas pontuais dos dois métodos estão dentro dos
+respectivos intervalos de credibilidade de 95%, indicando resultados
+coerentes nesta aplicação.
+
 
 # 7. Aplicação financeira
 
