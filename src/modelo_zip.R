@@ -19,3 +19,21 @@ logver_zip <- function(p, lambda, resumo) {
     resumo$n_positivos * lambda +
     resumo$soma * log(lambda)
 }
+
+
+# Vetor score da log-verossimilhança ZIP
+score_zip <- function(p, lambda, resumo) {
+
+  exp_neg_lambda <- exp(-lambda)
+  prob_zero <- p + (1 - p) * exp_neg_lambda
+
+  dp <- resumo$n0 * (1 - exp_neg_lambda) / prob_zero -
+    resumo$n_positivos / (1 - p)
+
+  dlambda <- -resumo$n0 * (1 - p) * exp_neg_lambda /
+    prob_zero -
+    resumo$n_positivos +
+    resumo$soma / lambda
+
+  c(dp = dp, dlambda = dlambda)
+}
