@@ -1,0 +1,102 @@
+
+---
+title: "ME524 — Laboratório 2"
+subtitle: "Modelo de Poisson Inflado em Zero"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+source("src/modelo_zip.R")
+source("src/optim/optim_zip.R")
+```
+
+# 1. Preparação dos dados
+
+```{r dados}
+dados <- read.csv("data/visitas_medicas.csv")
+
+visitas_por_perfil <- split(
+  dados$visitas,
+  factor(dados$perfil, levels = c("baixo", "medio", "alto"))
+)
+
+resumo_dados <- t(sapply(visitas_por_perfil, function(y) {
+  c(
+    n = length(y),
+    zeros = sum(y == 0),
+    proporcao_zeros = mean(y == 0),
+    media = mean(y),
+    variancia = var(y)
+  )
+}))
+
+knitr::kable(
+  round(resumo_dados, 4),
+  caption = "Estatísticas descritivas por perfil"
+)
+```
+
+# 2. Estimação por máxima verossimilhança
+
+A estimação utiliza BFGS, reparametrização dos parâmetros
+e nove pontos iniciais por perfil.
+
+```{r estimacao-optim}
+resultados_optim <- lapply(
+  visitas_por_perfil,
+  multiplos_inicios_zip
+)
+
+melhores_optim <- lapply(resultados_optim, function(tabela) {
+  tabela[which.max(tabela$logver), ]
+})
+
+estimativas_optim <- do.call(rbind, melhores_optim)
+
+knitr::kable(
+  round(estimativas_optim, 6),
+  caption = "Estimativas ZIP por máxima verossimilhança"
+)
+```
+
+## 2.1 Diagnóstico de convergência
+
+```{r diagnostico-optim}
+diagnosticos <- data.frame(
+  perfil = names(resultados_optim),
+  convergencias = sapply(resultados_optim, function(x) {
+    sum(x$convergencia == 0)
+  }),
+  amplitude_logver = sapply(resultados_optim, function(x) {
+    diff(range(x$logver))
+  }),
+  row.names = NULL
+)
+
+knitr::kable(
+  diagnosticos,
+  digits = 6,
+  caption = "Convergência e sensibilidade aos pontos iniciais"
+)
+```
+
+O perfil alto apresentou soluções numéricas distintas.
+A melhor foi selecionada pela maior log-verossimilhança.
+
+# 3. Newton-Raphson
+
+# 4. Algoritmo EM
+
+# 5. Gibbs Sampler
+
+# 6. Comparação dos métodos
+
+# 7. Aplicação financeira
+
+# 8. Exportação para Overleaf
