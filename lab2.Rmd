@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 
 source("src/modelo_zip.R")
 source("src/optim/optim_zip.R")
+source("src/parte2/em_zip.R")
+source("src/parte2/ajustar_em_por_perfil.R")
 ```
 
 # 1. Preparação dos dados
@@ -92,6 +94,26 @@ A melhor foi selecionada pela maior log-verossimilhança.
 # 3. Newton-Raphson
 
 # 4. Algoritmo EM
+
+```{r estimacao-em}
+resultados_em <- ajustar_em_por_perfil(visitas_por_perfil)
+estimativas_em <- resultados_em$resumo
+
+knitr::kable(
+  estimativas_em,
+  digits = 6,
+  caption = "Estimativas ZIP pelo algoritmo EM"
+)
+```
+
+```{r convergencia-em}
+ggplot2::ggplot(resultados_em$historico, ggplot2::aes(iteracao, logLik)) +
+  ggplot2::geom_line(color = "steelblue") +
+  ggplot2::geom_point(color = "steelblue", size = 1) +
+  ggplot2::facet_wrap(~ perfil, scales = "free_y") +
+  ggplot2::labs(x = "Iteração", y = "Log-verossimilhança observada") +
+  ggplot2::theme_minimal()
+```
 
 # 5. Gibbs Sampler
 
