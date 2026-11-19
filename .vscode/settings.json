@@ -1,0 +1,8 @@
+{
+  "r.rterm.windows": "C:\\Program Files\\R\\R-4.6.0\\bin\\R.exe",
+  "r.rpath.windows": "C:\\Program Files\\R\\R-4.6.0\\bin\\R.exe",
+  "r.alwaysUseActiveTerminal": true,
+  "terminal.integrated.env.windows": {
+    "RSTUDIO_PANDOC": "C:\\Program Files\\RStudio\\resources\\app\\bin\\quarto\\bin\\tools"
+  }
+}

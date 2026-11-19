@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "R: executar arquivo ativo",
+      "type": "process",
+      "command": "C:\\Program Files\\R\\R-4.6.0\\bin\\Rscript.exe",
+      "args": ["${file}"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "R Markdown: gerar lab2.html",
+      "type": "process",
+      "command": "C:\\Program Files\\R\\R-4.6.0\\bin\\Rscript.exe",
+      "args": ["-e", "rmarkdown::render('lab2.Rmd', encoding = 'UTF-8')"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "RSTUDIO_PANDOC": "C:\\Program Files\\RStudio\\resources\\app\\bin\\quarto\\bin\\tools" }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

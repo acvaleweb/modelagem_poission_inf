@@ -95,6 +95,129 @@ A melhor foi selecionada pela maior log-verossimilhança.
 
 # 5. Gibbs Sampler
 
+## Exercicio 6
+
+```{r}
+source("partes/parte3.R")
+dir.create("figure/parte3", recursive = TRUE, showWarnings = FALSE)
+
+# Salva uma copia em PNG e mostra o mesmo grafico no RStudio/relatorio.
+salvar_grafico <- function(arquivo, desenhar) {
+  png(arquivo, width = 1200, height = 900, res = 120)
+  tryCatch(desenhar(), finally = dev.off())
+  desenhar()
+}
+```
+
+
+```{r}
+# 2. Executar separadamente para os tres perfis
+# Descomente apos carregar o conjunto de dados completo em 'dados'.
+# Nao use apenas as seis linhas que aparecem como exemplo no PDF do lab.
+
+set.seed(2026)
+perfis <- c("baixo", "medio", "alto")
+ajustes <- setNames(lapply(perfis, function(perfil) {
+  gibbs_zip(visitas_por_perfil[[perfil]], B = 10000, burnin = 2000, p_inicial = 0.5, lambda_inicial = resumo_dados[[perfil, "media"]])
+}), perfis)
+
+resumos <- do.call(rbind, lapply(perfis, function(perfil) {
+  cbind(perfil = perfil, ajustes[[perfil]]$resumo)
+}))
+rownames(resumos) <- NULL
+latex_resumos <- knitr::kable(
+  resumos, format = "latex", booktabs = TRUE, digits = 4,
+  col.names = c("Perfil", "Parametro", "Media", "Mediana", "LI 95%", "LS 95%"),
+  caption = "Resumos posteriores dos parametros por perfil"
+)
+writeLines(as.character(latex_resumos), "figure/parte3/resumos_gibbs.tex")
+cat(as.character(latex_resumos), sep = "\n")
+
+# 3. Diagnostico (traceplot + ACF para cada parametro)
+plot_diagnostico <- function(ajuste, perfil = "") {
+  par_antigo <- par(mfrow = c(2, 2))
+  on.exit(par(par_antigo))
+  for (param in c("p", "lambda")) {
+    plot(ajuste$cadeias$iteracao, ajuste$cadeias[[param]], type = "l",
+         xlab = "Iteracao", ylab = param,
+         main = paste("Traceplot:", perfil, param))
+    abline(v = ajuste$burnin, col = "red", lty = 2)
+    acf(ajuste$posterior[[param]],
+        main = paste("ACF pos-burn-in:", perfil, param))
+  }
+}
+
+# Executar apos criar 'ajustes':
+for (perfil in perfis) {
+  salvar_grafico(
+    file.path("figure/parte3", paste0("diagnostico_", perfil, ".png")),
+    function() plot_diagnostico(ajustes[[perfil]], perfil)
+  )
+}
+```
+
+## Exercicio 7: comparacao de pontos iniciais
+
+Para cada perfil, executamos tres cadeias com pontos iniciais diferentes.
+Os graficos mostram as primeiras 2.000 iteracoes, para facilitar a comparacao
+da aproximacao das cadeias. A linha vertical indica o fim do burn-in.
+Tambem e importante verificar os traceplots completos e as ACFs acima: a
+aproximacao visual das cadeias, por si so, nao prova a convergencia.
+As ACFs abaixo usam apenas as amostras apos o burn-in, separadamente para
+cada ponto inicial; autocorrelacoes que diminuem lentamente indicam maior
+dependencia entre amostras sucessivas.
+
+```{r convergencia-multiplos-inicios}
+set.seed(2027)
+inicios_p <- c(0.1, 0.5, 0.9)
+fatores_lambda <- c(0.5, 1, 2)
+cores <- c("steelblue", "darkorange", "darkgreen")
+
+cadeias_iniciais <- lapply(perfis, function(perfil) {
+  lambda_base <- max(resumo_dados[perfil, "media"], 0.1)
+  lapply(seq_along(inicios_p), function(i) {
+    gibbs_zip(visitas_por_perfil[[perfil]], B = 10000, burnin = 2000,
+              p_inicial = inicios_p[i],
+              lambda_inicial = fatores_lambda[i] * lambda_base)
+  })
+})
+names(cadeias_iniciais) <- perfis
+
+for (perfil in perfis) {
+  cadeias <- cadeias_iniciais[[perfil]]
+  lambda_base <- max(resumo_dados[perfil, "media"], 0.1)
+  rotulos <- sprintf("p = %.1f, lambda = %.2f", inicios_p,
+                     fatores_lambda * lambda_base)
+  for (parametro in c("p", "lambda")) {
+    trajetorias <- sapply(cadeias, function(cadeia) {
+      cadeia$cadeias[1:2000, parametro]
+    })
+    salvar_grafico(
+      file.path("figure/parte3", paste0("trajetorias_", perfil, "_", parametro, ".png")),
+      function() {
+        matplot(1:2000, trajetorias, type = "l", lty = 1, col = cores,
+                xlab = "Iteracao", ylab = parametro,
+                main = paste("Perfil", perfil, "-", parametro))
+        abline(v = 2000, lty = 2)
+        legend("topright", legend = rotulos, col = cores, lty = 1, cex = 0.7)
+      }
+    )
+    salvar_grafico(
+      file.path("figure/parte3", paste0("acf_inicios_", perfil, "_", parametro, ".png")),
+      function() {
+        par_antigo <- par(mfrow = c(3, 1), mar = c(3, 4, 3, 1))
+        on.exit(par(par_antigo))
+        for (i in seq_along(cadeias)) {
+          acf(cadeias[[i]]$posterior[[parametro]], lag.max = 10,
+              col = cores[i], main = paste(perfil, parametro, "-", rotulos[i]))
+        }
+      }
+    )
+  }
+}
+```
+
+
 # 6. Comparação dos métodos
 
 # 7. Aplicação financeira
