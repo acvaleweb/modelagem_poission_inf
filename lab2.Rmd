@@ -100,3 +100,38 @@ A melhor foi selecionada pela maior log-verossimilhança.
 # 7. Aplicação financeira
 
 # 8. Exportação para Overleaf
+
+```{r exportacao-overleaf}
+dir.create(
+  "relatorio/overleaf/assets/tabelas",
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+tabela_optim <- data.frame(
+  Perfil = rownames(estimativas_optim),
+  p = estimativas_optim$p,
+  lambda = estimativas_optim$lambda,
+  logver = estimativas_optim$logver,
+  row.names = NULL
+)
+
+latex_optim <- knitr::kable(
+  tabela_optim,
+  format = "latex",
+  booktabs = TRUE,
+  digits = 4,
+  col.names = c(
+    "Perfil",
+    "$\\hat{p}$",
+    "$\\hat{\\lambda}$",
+    "Log-verossimilhança"
+  ),
+  escape = FALSE
+)
+
+writeLines(
+  as.character(latex_optim),
+  "relatorio/overleaf/assets/tabelas/estimativas_optim.tex"
+)
+```
