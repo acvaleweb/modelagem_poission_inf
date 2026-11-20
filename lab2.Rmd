@@ -195,7 +195,7 @@ cada ponto inicial; autocorrelacoes que diminuem lentamente indicam maior
 dependencia entre amostras sucessivas.
 
 ```{r convergencia-multiplos-inicios}
-set.seed(2027)
+set.seed(2026)
 inicios_p <- c(0.1, 0.5, 0.9)
 fatores_lambda <- c(0.5, 1, 2)
 cores <- c("steelblue", "darkorange", "darkgreen")
@@ -311,6 +311,41 @@ coerentes nesta aplicação.
 
 
 # 7. Aplicação financeira
+
+Para cada perfil, o valor anual é calculado por
+\(V = 250\lambda(1-p) + 100\). As colunas LI e LS aplicam essa fórmula
+separadamente aos limites marginais de cada parâmetro; esses resultados
+não constituem um intervalo de credibilidade para o valor anual.
+
+```{r aplicacao-financeira}
+library(dplyr)
+
+valores_anuais <- comparacao_metodos %>% select(-li_gs, -ls_gs) %>%
+  group_by(perfil) %>%
+  summarise(
+    across(-parametro, ~ {
+      if (sum(parametro == "p") != 1 || sum(parametro == "lambda") != 1) {
+        stop("Cada perfil deve ter uma linha para p e uma para lambda.")
+      }
+      250 * .x[parametro == "lambda"] * (1 - .x[parametro == "p"]) + 100
+    }),
+    .groups = "drop"
+  ) %>%
+  arrange(match(perfil, comparacao_metodos$perfil))
+
+latex_valores <- knitr::kable(
+  valores_anuais, format = "latex", booktabs = TRUE, digits = 2,
+  col.names = c("Perfil", "Mediana Gibbs", "EM", "optim"),
+  caption = "Valores anuais calculados por perfil (R\\$)"
+)
+dir.create("relatorio/overleaf/assets/tabelas", recursive = TRUE, showWarnings = FALSE)
+writeLines(as.character(latex_valores),
+           "relatorio/overleaf/assets/tabelas/valores_anuais.tex")
+cat(as.character(latex_valores), sep = "\n")
+
+comparacao_metodos
+valores_anuais
+```
 
 # 8. Exportação para Overleaf
 
