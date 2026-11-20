@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 
 source("src/modelo_zip.R")
-source("src/optim/optim_zip.R")
+source("src/parte1/optim_zip.R")
 source("src/parte2/em_zip.R")
 source("src/parte2/ajustar_em_por_perfil.R")
 source("src/parte3/parte3.R")
